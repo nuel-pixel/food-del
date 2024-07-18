@@ -12,51 +12,102 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16' #node version
-          
       - name: Set up Git
         run: |
-          git config --global user.email "nrohi506@gmail.com"
-          git config --global user.name "nuel-pixel"
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
       
       - name: Determine version
         id: version
         run: |
           # Example: Extract version from package.json
-          echo "version=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
+          VERSION=$(node -pe "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
       
       - name: Create tag
         id: create_tag
-        run: git tag -a v${{ env.version }} -m "Version ${{ env.version }}"
+        run: |
+          git tag -a v${{ env.VERSION }} -m "Version ${{ env.VERSION }}"
       
       - name: Push tag to GitHub
-        if: success()
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          git config --global user.email "nrohi506@gmail.com"
-          git config --global user.name "nuel-pixel"
-          git clone --depth=1 https://user:${{secrets.PAT_TOKEN}}@github.com/nuel-pixel/food-del.git
+          git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}
           git push origin v${{ env.VERSION }}
-        #   git remote -v
-        #   git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/nuel-pixel/food-del.git
-        #   git remote -v
-        #   git push origin v${{ env.version }} --tags
-        
       
       - name: Create release
         id: create_release
-        if: success()
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.version }}
-          release_name: Release ${{ env.version }}
+          tag_name: v${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
           body: |
-            Release ${{ env.version }}
+            Release ${{ env.VERSION }}
           draft: false
           prerelease: false
+
+# name: Auto Tag and Release
+
+# on:
+#   push:
+#     branches:
+#       - main  # Replace with your main branch name
+
+# jobs:
+#   tag-and-release:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v2
+      
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: '16' #node version
+          
+#       - name: Set up Git
+#         run: |
+#           git config --global user.email "nrohi506@gmail.com"
+#           git config --global user.name "nuel-pixel"
+      
+#       - name: Determine version
+#         id: version
+#         run: |
+#           # Example: Extract version from package.json
+#           echo "version=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
+      
+#       - name: Create tag
+#         id: create_tag
+#         run: git tag -a v${{ env.version }} -m "Version ${{ env.version }}"
+      
+#       - name: Push tag to GitHub
+#         if: success()
+#         env:
+#           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+#         run: |
+#           git config --global user.email "nrohi506@gmail.com"
+#           git config --global user.name "nuel-pixel"
+#           git clone --depth=1 https://user:${{secrets.PAT_TOKEN}}@github.com/nuel-pixel/food-del.git
+#           git push origin v${{ env.VERSION }}
+#         #   git remote -v
+#         #   git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/nuel-pixel/food-del.git
+#         #   git remote -v
+#         #   git push origin v${{ env.version }} --tags
+        
+      
+#       - name: Create release
+#         id: create_release
+#         if: success()
+#         uses: actions/create-release@v1
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         with:
+#           tag_name: v${{ env.version }}
+#           release_name: Release ${{ env.version }}
+#           body: |
+#             Release ${{ env.version }}
+#           draft: false
+#           prerelease: false
