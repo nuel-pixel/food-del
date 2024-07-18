@@ -17,7 +17,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
       
-      -name: Determine version
+      - name: Determine version
         id: version
         run: |
           # Example: Extract version from package.json
@@ -28,21 +28,22 @@ jobs:
         run: git tag -a v${{ steps.version.outputs.version }} -m "Version ${{ steps.version.outputs.version }}"
       
       - name: Push tag to GitHub
+        if: success()
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}
-          git push origin v${{ env.VERSION }}
+          git push origin v${{ steps.version.outputs.version }} --tags
       
       - name: Create release
         id: create_release
+        if: success()
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.VERSION }}
-          release_name: Release ${{ env.VERSION }}
+          tag_name: v${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
           body: |
-            Release ${{ env.VERSION }}
+            Release ${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
