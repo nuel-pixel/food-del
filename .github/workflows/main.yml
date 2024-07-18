@@ -15,7 +15,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16' #node version
+          node-version: '16'
           
       - name: Set up Git
         run: |
@@ -39,15 +39,9 @@ jobs:
         run: |
           git config --global user.email "nrohi506@gmail.com"
           git config --global user.name "nuel-pixel"
-          git remote set-url origin "https://:$PAT_TOKEN@github.com/nuel-pixel/food-del.git"
-          git push origin v${{ env.VERSION }}
-        # git clone --depth=1 https://user:${{secrets.PAT_TOKEN}}@github.com/nuel-pixel/food-del.git
-        #   git remote -v
-        #   git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/nuel-pixel/food-del.git
-        #   git remote -v
-        #   git push origin v${{ env.version }} --tags
+          git remote set-url origin "https://nuel-pixel:${{ secrets.PAT_TOKEN }}@github.com/nuel-pixel/food-del.git"
+          git push origin v${{ env.version }}
         
-      
       - name: Create release
         id: create_release
         if: success()
