@@ -1,0 +1,46 @@
+name: Auto Tag and Release
+
+on:
+  push:
+    branches:
+      - main  # Replace with your main branch name
+
+jobs:
+  tag-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Set up Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+      
+      - name: Determine version
+        id: version
+        run: |
+          # Example: Extract version from package.json
+          echo ::set-output name=version::$(node -pe "require('./package.json').version")
+      
+      - name: Create tag
+        id: create_tag
+        run: git tag -a v${{ steps.version.outputs.version }} -m "Version ${{ steps.version.outputs.version }}"
+      
+      - name: Push tag to GitHub
+        if: success()
+        run: git push origin v${{ steps.version.outputs.version }}
+      
+      - name: Create release
+        id: create_release
+        if: success()
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            Release ${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
