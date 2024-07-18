@@ -21,26 +21,30 @@ jobs:
         id: version
         run: |
           # Example: Extract version from package.json
-          echo ::set-output name=version::$(node -pe "require('./package.json').version")
+          VERSION=$(node -pe "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
       
       - name: Create tag
         id: create_tag
-        run: git tag -a v${{ steps.version.outputs.version }} -m "Version ${{ steps.version.outputs.version }}"
+        run: |
+          git tag -a v${{ env.VERSION }} -m "Version ${{ env.VERSION }}"
       
       - name: Push tag to GitHub
-        if: success()
-        run: git push origin v${{ steps.version.outputs.version }}
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}
+          git push origin v${{ env.VERSION }}
       
       - name: Create release
         id: create_release
-        if: success()
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release ${{ steps.version.outputs.version }}
+          tag_name: v${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
           body: |
-            Release ${{ steps.version.outputs.version }}
+            Release ${{ env.VERSION }}
           draft: false
           prerelease: false
