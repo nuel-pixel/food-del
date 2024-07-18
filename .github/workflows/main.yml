@@ -37,7 +37,9 @@ jobs:
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          git remote set-url origin https://x-access-token:${{ env.PAT_TOKEN }}@github.com/nuel-pixel/food-del.git
+          git remote -v
+          git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/nuel-pixel/food-del.git
+          git remote -v
           git push origin v${{ env.version }} --tags
       
       - name: Create release
@@ -45,7 +47,7 @@ jobs:
         if: success()
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ env.version }}
           release_name: Release ${{ env.version }}
