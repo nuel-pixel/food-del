@@ -27,6 +27,13 @@ jobs:
           tar -xzf git-chglog_0.15.1_linux_amd64.tar.gz
           sudo mv git-chglog /usr/local/bin/
 
+      - name: Ensure a git tag exists
+        run: |
+          if ! git describe --tags --abbrev=0; then
+            git tag v0.1.0
+            git push origin v0.1.0
+          fi
+
       - name: Generate release notes
         id: release_notes
         run: git-chglog -o frontend/release-notes.md
