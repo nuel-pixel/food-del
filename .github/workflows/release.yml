@@ -29,7 +29,7 @@ jobs:
 
       - name: Generate release notes
         id: release_notes
-        run: git-chglog -o release-notes.md
+        run: git-chglog -o frontend/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
