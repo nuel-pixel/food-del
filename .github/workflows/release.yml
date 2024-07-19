@@ -30,8 +30,12 @@ jobs:
       - name: Ensure a git tag exists
         run: |
           if ! git describe --tags --abbrev=0; then
-            git tag v0.1.0
-            git push origin v0.1.0
+            tag="v0.1.0"
+            if git rev-parse "$tag" >/dev/null 2>&1; then
+              tag="v0.1.0-$(date +%Y%m%d%H%M%S)"
+            fi
+            git tag "$tag"
+            git push origin "$tag"
           fi
 
       - name: Generate release notes
