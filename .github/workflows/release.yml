@@ -38,6 +38,9 @@ jobs:
       #       git push origin "$tag"
       #     fi
 
+      - name: List all tags
+        run: git tag
+
       - name: Generate release notes
         id: release_notes
         run: git-chglog -o frontend/release-notes.md
