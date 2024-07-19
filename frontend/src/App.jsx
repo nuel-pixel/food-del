@@ -1,5 +1,5 @@
 import React from "react";
-import Navabar from "./components/Navbar/Navabar";
+import Navabar from "./components/Navbar/Navbar";
 
 const App = () => {
   return (

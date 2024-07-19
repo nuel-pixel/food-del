@@ -1,0 +1,63 @@
+name: Generate Release Notes and Bump Version
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install git-chglog
+        run: |
+          wget https://github.com/git-chglog/git-chglog/releases/download/v0.9.1/git-chglog_0.9.1_linux_amd64.tar.gz
+          tar -xzf git-chglog_0.9.1_linux_amd64.tar.gz
+          sudo mv git-chglog /usr/local/bin/
+
+      - name: Generate release notes
+        id: release_notes
+        run: git-chglog -o release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read release notes
+        id: get_release_notes
+        run: echo "::set-output name=body::$(cat release-notes.md)"
+
+      - name: Bump version and push
+        id: bump_version
+        uses: "phips28/gh-action-bump-version@v9.0.0"
+        with:
+          release-type: "minor" # Change to 'patch' or 'major' as needed
+          commit-message: "chore(release): bump version to {{version}} [skip ci]"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.bump_version.outputs.new_tag }}
+          release_name: Release ${{ steps.bump_version.outputs.new_tag }}
+          body: ${{ steps.get_release_notes.outputs.body }}
+          draft: false
+          prerelease: false
