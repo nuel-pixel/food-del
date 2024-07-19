@@ -35,7 +35,7 @@ jobs:
 
       - name: Read release notes
         id: get_release_notes
-        run: echo "::set-output name=body::$(cat release-notes.md)"
+        run: echo "::set-output name=body::$(cat frontend/release-notes.md)"
 
       - name: Bump version and push
         id: bump_version
