@@ -19,7 +19,7 @@ jobs:
           node-version: "16"
 
       - name: Install dependencies
-        run: npm install
+        run: cd frontend &&npm install
 
       - name: Install git-chglog
         run: |
@@ -41,6 +41,7 @@ jobs:
         id: bump_version
         uses: "phips28/gh-action-bump-version@v9.0.0"
         with:
+          path: "frontend"
           release-type: "minor" # Change to 'patch' or 'major' as needed
           commit-message: "chore(release): bump version to {{version}} [skip ci]"
 
