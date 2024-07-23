@@ -20,7 +20,9 @@ const StoreContextProvider = (props) => {
 
 
   useEffect(()=>{
-    console.log(cartItems);
+    //remove console in use efferct func
+    //console.log(cartItems);
+    
   },[cartItems])
 
   const contectValue = {
