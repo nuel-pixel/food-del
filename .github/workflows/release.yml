@@ -67,7 +67,7 @@ jobs:
         with:
           name: commit-message
           path: commit_message.txt
-        run: echo "${{ env.commit_message }}" > commit_message.txt
+        # run: echo "${{ env.commit_message }}" > commit_message.txt
 
       - name: Check if release exists
         id: check_release
