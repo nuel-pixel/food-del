@@ -18,7 +18,7 @@ const StoreContextProvider = (props) => {
   };
 
   useEffect(() => {
-    console.log(cartItems);
+    console.log(cartItems); // add comment to useeffect methof
   }, [cartItems]);
 
   const contectValue = {
@@ -27,6 +27,7 @@ const StoreContextProvider = (props) => {
     addToCart,
     removeFromCart,
   };
+
   return (
     <StoreContext.Provider value={contectValue}>
       {props.children}
