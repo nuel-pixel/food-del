@@ -78,7 +78,7 @@ jobs:
           path: commit_messages.txt
         #: echo "${{ env.commit_messages }}" > commit_messages.txt
 
-        - name: Check if release exists
+      - name: Check if release exists
         id: check_release
         run: |
           release_exists=$(curl -s \
@@ -91,7 +91,6 @@ jobs:
           else
             echo "release_exists=false" >> $GITHUB_ENV
           fi
-
 
       - name: Create Release
         if: env.release_exists == 'false'
