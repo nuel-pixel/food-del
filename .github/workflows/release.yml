@@ -19,7 +19,7 @@ jobs:
           node-version: "16"
 
       - name: Install dependencies
-        run: cd frontend &&npm install
+        run: npm install
 
       - name: Install git-chglog
         run: |
@@ -27,52 +27,94 @@ jobs:
           tar -xzf git-chglog_0.15.1_linux_amd64.tar.gz
           sudo mv git-chglog /usr/local/bin/
 
-      # - name: Ensure a git tag exists
-      #   run: |
-      #     if ! git describe --tags --abbrev=0; then
-      #       tag="v0.1.0"
-      #       if git rev-parse "$tag" >/dev/null 2>&1; then
-      #         tag="v0.1.0-$(date +%Y%m%d%H%M%S)"
-      #       fi
-      #       git tag "$tag"
-      #       git push origin "$tag"
-      #     fi
+      - name: Ensure a git tag exists
+        id: ensure_tag
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0 || echo "v0.0.0")
+          echo "Latest tag: $latest_tag"
+          IFS='.' read -r -a tag_parts <<< "${latest_tag#v}"
+          tag_parts[2]=$((tag_parts[2] + 1))
+          new_tag="v${tag_parts[0]}.${tag_parts[1]}.${tag_parts[2]}"
+          echo "New tag: $new_tag"
+          echo "new_tag=$new_tag" >> $GITHUB_ENV
+
+      - name: Create and push new tag
+        run: |
+          echo "New tag: ${{ env.new_tag }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/${{ env.new_tag }}"; then
+            echo "Tag ${{ env.new_tag }} already exists. Skipping tag creation."
+          else
+            echo "Creating and pushing new tag ${{ env.new_tag }}"
+            git tag ${{ env.new_tag }}
+            git push origin ${{ env.new_tag }}
+          fi
 
       - name: List all tags
         run: git tag
 
+      - name: Fetch all tags
+        run: git fetch --tags
+
       - name: Generate release notes
-        id: release_notes
-        run: git-chglog -o frontend/release-notes.md
+        id: generate_release_notes
+        run: |
+          if [ -f .chglog/config.yml ] && [ -f .chglog/CHANGELOG.tpl.md ]; then
+            git-chglog -o release-notes.md
+          else
+            echo "Changelog configuration file or template not found. Please ensure .chglog/config.yml and .chglog/CHANGELOG.tpl.md are present."
+            exit 1
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Read release notes
-        id: get_release_notes
-        run: echo "::set-output name=body::$(cat frontend/release-notes.md)"
+      - name: Read release notes and set output
+        id: read_release_notes
+        run: |
+          release_notes=$(cat release-notes.md | sed ':a;N;$!ba;s/\n/\\n/g')
+          echo "release_notes=$release_notes" >> $GITHUB_ENV
 
-      - name: Bump version and push
-        id: bump_version
-        uses: "phips28/gh-action-bump-version@v9.0.0"
+      - name: Upload release notes artifact
+        uses: actions/upload-artifact@v3
         with:
-          path: "frontend"
-          release-type: "minor" # Change to 'patch' or 'major' as needed
-          commit-message: "chore(release): bump version to {{version}} [skip ci]"
+          name: release-notes
+          path: release-notes.md
 
-      - name: Push changes
-        uses: ad-m/github-push-action@v0.6.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+      - name: Check if release exists
+        id: check_release
+        run: |
+          release_exists=$(curl -s \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.new_tag }}" | jq '.id')
+          if [ "$release_exists" != "null" ]; then
+            echo "Release with tag ${{ env.new_tag }} already exists. Skipping release creation."
+            echo "release_exists=true" >> $GITHUB_ENV
+          else
+            echo "release_exists=false" >> $GITHUB_ENV
+          fi
 
       - name: Create Release
+        if: env.release_exists == 'false'
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.bump_version.outputs.new_tag }}
-          release_name: Release ${{ steps.bump_version.outputs.new_tag }}
-          body: ${{ steps.get_release_notes.outputs.body }}
+          tag_name: ${{ env.new_tag }}
+          release_name: Release ${{ env.new_tag }}
+          body: ${{ env.release_notes }}
           draft: false
           prerelease: false
+
+      - name: Update Release
+        if: env.release_exists == 'true'
+        run: |
+          release_id=$(curl -s \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.new_tag }}" | jq '.id')
+          curl -X PATCH \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d "{\"body\":\"${{ env.release_notes }}\"}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
