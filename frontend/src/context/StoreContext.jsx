@@ -13,17 +13,13 @@ const StoreContextProvider = (props) => {
       setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
     }
   };
-  // restructering removeFromCart
   const removeFromCart = (itemId) => {
-    setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));,[d]
+    setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));
   };
 
-
-  useEffect(()=>{
-    //remove console in use efferct func
-    //console.log(cartItems);
-    
-  },[cartItems])
+  useEffect(() => {
+    console.log(cartItems);
+  }, [cartItems]);
 
   const contectValue = {
     food_list,
