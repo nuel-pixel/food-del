@@ -18,7 +18,7 @@ const StoreContextProvider = (props) => {
   };
 
   useEffect(() => {
-    console.log(cartItems); // add comment to useeffect methof
+    console.log(cartItems); // add comment to useeffect method
   }, [cartItems]);
 
   const contectValue = {
