@@ -63,14 +63,14 @@ jobs:
         id: get_commit_messages
         run: |
           if [ "${{ env.latest_tag }}" == "v0.0.0" ]; then
-            commit_messages=$(git log --pretty=format:"%s" --no-merges)
+            commit_messages=$(git log --pretty=format:"* %s" --no-merges)
           else
-            commit_messages=$(git log ${latest_tag}..HEAD --pretty=format:"%s" --no-merges)
+            commit_messages=$(git log ${latest_tag}..HEAD --pretty=format:"* %s" --no-merges)
           fi
           echo "Commit messages since ${latest_tag}:"
           echo "$commit_messages"
           echo "$commit_messages" > commit_messages.txt
-          echo "commit_messages_file=commit_messages.txt" >> $GITHUB_ENV
+          echo "commit_messages=$commit_messages" >> $GITHUB_ENV
 
       - name: Upload commit messages artifact
         uses: actions/upload-artifact@v3
@@ -106,7 +106,7 @@ jobs:
           release_name: Release ${{ env.new_tag }}
           body: |
             ## Release Notes
-            ${{ secrets.COMMIT_MESSAGES }}
+            ${{ env.commit_messages }}
           draft: false
           prerelease: false
 
@@ -120,5 +120,5 @@ jobs:
           curl -X PATCH \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            -d "{\"body\":\"## Release Notes\n${{ secrets.COMMIT_MESSAGES }}\"}" \
+            -d "{\"body\":\"## Release Notes\n${{ env.commit_messages }}\"}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
