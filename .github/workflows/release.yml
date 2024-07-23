@@ -69,22 +69,25 @@ jobs:
           fi
           echo "Commit messages since ${latest_tag}:"
           echo "$commit_messages"
-          echo "commit_messages=$commit_messages" >> $GITHUB_ENV
+          echo "$commit_messages" > commit_messages.txt
+          echo "commit_messages_file=commit_messages.txt" >> $GITHUB_ENV
 
       - name: Upload commit messages artifact
         uses: actions/upload-artifact@v3
         with:
           name: commit-messages
           path: commit_messages.txt
-        #: echo "${{ env.commit_messages }}" > commit_messages.txt
 
       - name: Check if release exists
         id: check_release
         run: |
-          release_exists=$(curl -s \
+          echo "Checking if release exists with tag: ${{ env.new_tag }}"
+          response=$(curl -s \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.new_tag }}" | jq '.id')
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.new_tag }}")
+          echo "API response: $response"
+          release_exists=$(echo "$response" | jq '.id')
           if [ "$release_exists" != "null" ]; then
             echo "Release with tag ${{ env.new_tag }} already exists. Skipping release creation."
             echo "release_exists=true" >> $GITHUB_ENV
@@ -101,7 +104,9 @@ jobs:
         with:
           tag_name: ${{ env.new_tag }}
           release_name: Release ${{ env.new_tag }}
-          body: ${{ env.commit_messages }}
+          body: |
+            ## Release Notes
+            ${{ secrets.COMMIT_MESSAGES }}
           draft: false
           prerelease: false
 
@@ -115,5 +120,5 @@ jobs:
           curl -X PATCH \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            -d "{\"body\":\"${{ env.commit_messages }}\"}" \
+            -d "{\"body\":\"## Release Notes\n${{ secrets.COMMIT_MESSAGES }}\"}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
