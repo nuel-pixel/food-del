@@ -55,19 +55,21 @@ jobs:
       - name: Fetch all tags
         run: git fetch --tags
 
-      - name: Get latest commit message
-        id: get_commit_message
+      - name: Get commit messages since last tag
+        id: get_commit_messages
         run: |
-          latest_commit_message=$(git log -1 --pretty=%B)
-          echo "Latest commit message: $latest_commit_message"
-          echo "commit_message=$latest_commit_message" >> $GITHUB_ENV
+          latest_tag=$(git describe --tags --abbrev=0 || echo "v0.0.0")
+          commit_messages=$(git log ${latest_tag}..HEAD --pretty=format:"%s" --no-merges)
+          echo "Commit messages since ${latest_tag}:"
+          echo "$commit_messages"
+          echo "commit_messages=$commit_messages" >> $GITHUB_ENV
 
-      - name: Upload commit message artifact
+      - name: Upload commit messages artifact
         uses: actions/upload-artifact@v3
         with:
-          name: commit-message
-          path: commit_message.txt
-        # run: echo "${{ env.commit_message }}" > commit_message.txt
+          name: commit-messages
+          path: commit_messages.txt
+        run: echo "${{ env.commit_messages }}" > commit_messages.txt
 
       - name: Check if release exists
         id: check_release
@@ -81,7 +83,6 @@ jobs:
             echo "release_exists=true" >> $GITHUB_ENV
           else
             echo "release_exists=false" >> $GITHUB_ENV
-          fi
 
       - name: Create Release
         if: env.release_exists == 'false'
@@ -92,7 +93,7 @@ jobs:
         with:
           tag_name: ${{ env.new_tag }}
           release_name: Release ${{ env.new_tag }}
-          body: ${{ env.commit_message }}
+          body: ${{ env.commit_messages }}
           draft: false
           prerelease: false
 
@@ -106,5 +107,5 @@ jobs:
           curl -X PATCH \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            -d "{\"body\":\"${{ env.commit_message }}\"}" \
+            -d "{\"body\":\"${{ env.commit_messages }}\"}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
