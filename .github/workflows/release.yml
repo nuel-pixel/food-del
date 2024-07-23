@@ -58,7 +58,7 @@ jobs:
       - name: Generate release notes
         id: generate_release_notes
         run: |
-          if [ -f .chglog/config.yml ] && [ -f .chglog/CHANGELOG.tpl.md ]; then
+          if [ -f config.yml ] && [ -f CHANGELOG.tpl.md ]; then
             git-chglog -o release-notes.md
           else
             echo "Changelog configuration file or template not found. Please ensure .chglog/config.yml and .chglog/CHANGELOG.tpl.md are present."
