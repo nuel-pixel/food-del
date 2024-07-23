@@ -28,6 +28,7 @@ const StoreContextProvider = (props) => {
     removeFromCart,
   };
 
+  //update grade with props
   return (
     <StoreContext.Provider value={contectValue}>
       {props.children}
