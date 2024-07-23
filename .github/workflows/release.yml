@@ -30,7 +30,11 @@ jobs:
       - name: Ensure a git tag exists
         id: ensure_tag
         run: |
-          latest_tag=$(git describe --tags --abbrev=0 || echo "v0.0.0")
+          if [ $(git tag | wc -l) -eq 0 ]; then
+            latest_tag="v0.0.0"
+          else
+            latest_tag=$(git describe --tags --abbrev=0)
+          fi
           echo "Latest tag: $latest_tag"
           IFS='.' read -r -a tag_parts <<< "${latest_tag#v}"
           tag_parts[2]=$((tag_parts[2] + 1))
@@ -58,8 +62,11 @@ jobs:
       - name: Get commit messages since last tag
         id: get_commit_messages
         run: |
-          latest_tag=$(git describe --tags --abbrev=0 || echo "v0.0.0")
-          commit_messages=$(git log ${latest_tag}..HEAD --pretty=format:"%s" --no-merges)
+          if [ "${{ env.latest_tag }}" == "v0.0.0" ]; then
+            commit_messages=$(git log --pretty=format:"%s" --no-merges)
+          else
+            commit_messages=$(git log ${latest_tag}..HEAD --pretty=format:"%s" --no-merges)
+          fi
           echo "Commit messages since ${latest_tag}:"
           echo "$commit_messages"
           echo "commit_messages=$commit_messages" >> $GITHUB_ENV
